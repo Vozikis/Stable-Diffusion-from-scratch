@@ -11,12 +11,47 @@ class CLIPEmbedding(nn.Module):
         self.positition_embedding = nn.Parameter(torch.zeros((n_token,n_embd)))
         
     def forward(self, tokens):
+        
         x = self.token_embedding(tokens)
         x += self.positition_embedding
         
         return x
         
 
+class CLIPLayer(nn.Module):
+    def __init__(self, n_head, n_embd):
+        super().__init__()
+        
+        self.layernorm_1 = nn.LayerNorm(n_embd)
+        
+        self.attention = SelfAttention(n_head, n_embd)
+        
+        self.layernorm_2 = nn.LayerNorm(n_embd)
+        
+        self.linear_1 = nn.Linear(n_embd, 4* n_embd)
+        self.linear_2 = nn.Linear(4*n_embd, n_embd)
+        
+    def forward(self,x):
+        residue = x
+        
+        x = self.layernorm_1(x)
+        
+        x = SelfAttention(x, causal_mask = True)
+        
+        x += residue
+        
+        
+        residue = x
+        
+        x = self.layernorm_2(x)
+        
+        x= self.linear_1(x)
+        
+        x = x*torch.sigmoid(1.702*x) #quickGeLU activation
+        
+        x = self.linear_2(x)
+        
+        x += residue
 
 class Clip(nn.Module):
     def __init__(self):
