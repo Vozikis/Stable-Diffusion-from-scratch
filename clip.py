@@ -52,6 +52,8 @@ class CLIPLayer(nn.Module):
         x = self.linear_2(x)
         
         x += residue
+        
+        return x
 
 class Clip(nn.Module):
     def __init__(self):
