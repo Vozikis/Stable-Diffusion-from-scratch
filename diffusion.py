@@ -4,7 +4,17 @@ from torch.nn import functional as F
 from attention import SelfAttention, CrossAttention
 
 
-
+class TimeEmbedding(nn.Module):
+    def __init__(self, n_embd):
+        super().__init__()
+        self.linear_1 = nn.Linear(n_embd, 4*n_embd)
+        self.linear_2 = nn.Linear(4*n_embd, 4*n_embd)
+        
+    def forward(self, x):
+        x = self.linear_1(x)
+        x = F.silu(x)
+        x= self.linear_2(x)
+        return x
 
 
 class Diffusion(nn.Module):
