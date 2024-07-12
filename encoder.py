@@ -48,7 +48,7 @@ class VAE_Encoder(nn.Sequential):
     def forward(self, x, noise):
         for module in self:
             if getattr(module, 'stride', None) == (2, 2):
-                x = F.pad(x, (0, 1, 0, 1)) #asymetric padding
+                x = F.pad(x, (0, 1, 0, 1)) #asymetric padding to right and bottom
             x = module(x)
 
         mean, log_variance = torch.chunk(x, 2, dim=1)
