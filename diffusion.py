@@ -28,6 +28,14 @@ class SwitchSequential(nn.Sequential):
         return x
     
     
+class Upsample(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.conv = nn.Conv2d(channels,channels, kernel_size=3, padding=1)
+    def forward(self, x):
+        x = F.interpolate(x,scale_factor=2, mode='nearest')
+        return self.conv(x)
+    
 class UNET(nn.Module):
     def __init__(self):
         super().__init__()
@@ -39,17 +47,17 @@ class UNET(nn.Module):
             
             SwitchSequential(nn.Conv2d(320, 320, kernel_size=3, stride = 2, padding=1)),
             SwitchSequential(UNET_ResidualBlock(320,640), UNET_AttentionBlock(8,80)),
-            SwitchSequential(UNET_ResidualBlock(320,640), UNET_AttentionBlock(8,80)),
+            SwitchSequential(UNET_ResidualBlock(640,640), UNET_AttentionBlock(8,80)),
             
             
-            SwitchSequential(nn.Conv2d(320, 640, kernel_size=3, stride = 2, padding=1)),
+            SwitchSequential(nn.Conv2d(640, 640, kernel_size=3, stride = 2, padding=1)),
             SwitchSequential(UNET_ResidualBlock(640,1280), UNET_AttentionBlock(8,160)),
             SwitchSequential(UNET_ResidualBlock(1280,1280), UNET_AttentionBlock(8,160)),
             
             
-            SwitchSequential(nn.Conv2d(640, 1280, kernel_size=3, stride = 2, padding=1)),
+            SwitchSequential(nn.Conv2d(1280, 1280, kernel_size=3, stride = 2, padding=1)),
             SwitchSequential(UNET_ResidualBlock(1280,1280)),
-            SwitchSequential(UNET_ResidualBlock(320,640))
+            SwitchSequential(UNET_ResidualBlock(1280,1280))
             
             
         ])
@@ -60,10 +68,29 @@ class UNET(nn.Module):
             
             UNET_AttentionBlock(8, 160), 
             
-            UNET_ResidualBlock(1280, 1280), 
+            UNET_ResidualBlock(1280, 1280) 
         )
         
         self.decoder = nn.ModuleList([
+            SwitchSequential(UNET_ResidualBlock(2560, 1280)), #double the size because of the skip connection
+            SwitchSequential(UNET_ResidualBlock(2560, 1280)),
+            
+            SwitchSequential(UNET_ResidualBlock(2560, 1280), Upsample(1280)),
+            
+            SwitchSequential(UNET_ResidualBlock(2560, 1280), UNET_AttentionBlock(8,160)),
+            SwitchSequential(UNET_ResidualBlock(2560, 1280), UNET_AttentionBlock(8,160)),
+            
+            SwitchSequential(UNET_ResidualBlock(1920, 1280), UNET_AttentionBlock(8,160), Upsample(1280)),
+            
+            SwitchSequential(UNET_ResidualBlock(1920, 640), UNET_AttentionBlock(8,80)),
+            SwitchSequential(UNET_ResidualBlock(1280, 640), UNET_AttentionBlock(8,80)),
+            
+            SwitchSequential(UNET_ResidualBlock(960, 640), UNET_AttentionBlock(8,80), Upsample(640)),
+            
+            SwitchSequential(UNET_ResidualBlock(960, 320), UNET_AttentionBlock(8,40)),
+            SwitchSequential(UNET_ResidualBlock(640, 320), UNET_AttentionBlock(8,40)),
+            SwitchSequential(UNET_ResidualBlock(640, 320), UNET_AttentionBlock(8,40))
+            
             
         ])
 
