@@ -39,17 +39,22 @@ class Upsample(nn.Module):
 class UNET_ResidualBlock(nn.Module):
     def __init__(self,in_channels,out_channels, n_time=1280):
         super().__init__()
+        
         self.groupnorm_feature = nn.GroupNorm(32, in_channels)
+        
         self.conv_feature = nn.Conv2d(in_channels, out_channels, kernel_size=3,padding=1)
+        
         self.linear_time = nn.Linear(n_time, out_channels)
         
         self.groupnorm_merged = nn.GroupNorm(32, out_channels)
+        
         self.conv_merged = nn.Conv2d(out_channels,out_channels, kernel_size= 3, padding=1)
         
         if in_channels == out_channels:
-            self.residual_layers = nn.Identity()
-        else:
+            self.residual_layers = nn.Identity() #we connect directly 
+        else: #else we have to convert into the shape of interest
             self.residual_layers = nn.Conv2d(in_channels, out_channels, kernel_size= 1, padding=0)
+            
     def forward(self, feature, time):
         
         residue = feature
@@ -64,7 +69,7 @@ class UNET_ResidualBlock(nn.Module):
         
         time = self.linear_time(time)
         
-        merged = feature + time.unsqueeze(-1).unsqueeze(-1)
+        merged = feature + time.unsqueeze(-1).unsqueeze(-1) #add the batch and the channel dimension
         
         merged = self.groupnorm_feature(merged)
         
@@ -75,6 +80,72 @@ class UNET_ResidualBlock(nn.Module):
         return merged + self.residual_layers(residue)
         
         
+class UNET_AttentionBlock(nn.Module):
+    def __init__(self, n_head, n_embd, d_context = 768):
+        super().__init__()
+        
+        channels = n_head * n_embd    
+        
+        self.groupnorm = nn.GroupNorm(32, channels, eps=1e-6)
+        
+        self.conv_input = nn.Conv2d(channels, channels, kernel_size= 1, padding=0)
+        
+        self.layernorm_1 = nn.LayerNorm(channels)
+        self.attention_1 = SelfAttention(n_head, channels, in_proj_bias= False)
+        self.layernorm_2 = nn.LayerNorm(channels)
+        self.attention_2 = CrossAttention(n_head, channels, d_context, in_proj_bias= False)
+        self.layernorm_3 = nn.LayerNorm(channels)
+        self.linear_geglu_1 = nn.Linear(channels,4*channels*2)
+        self.linear_geglu_2 = nn.Linear(4*channels,channels)
+        self.conv_output = nn.Conv2d(channels, channels, kernel_size=1, padding=0)
+    
+    def forward(self, x, context):
+        
+        residue_long = x
+        
+        x = self.groupnorm(x)
+        
+        x = self.conv_input(x)
+        
+        n,c,h,w = x.shape
+        
+        x = x.view((n,c,h * w))
+        
+        x = x.transpose(-1,-2)
+        
+        residue_short = x
+        
+        x = self.layernorm_1(x)
+        
+        x = self.attention_1(x)
+        
+        x += residue_short
+        
+        residue_short = x
+        
+        x = self.layernorm_2(x)
+        
+        x = self.attention_2(x, context)
+        
+        x += residue_short
+        
+        residue_short = x
+        
+        x = self.layernorm_3(x)
+        
+        x, gate = self.linear_geglu_1(x).chunk(2,dim=-1)
+        
+        x = x * F.gelu(gate)
+        
+        x = self.linear_geglu_2(x)
+        
+        x += residue_short
+        
+        x = x.transpose(-1,-2)
+        
+        x = x.view((n,c,h,w))
+        
+        return self.conv_output(x) + residue_long
         
         
         
