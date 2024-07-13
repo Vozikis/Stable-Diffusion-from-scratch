@@ -36,7 +36,48 @@ class Upsample(nn.Module):
         x = F.interpolate(x,scale_factor=2, mode='nearest')
         return self.conv(x)
     
-    
+class UNET_ResidualBlock(nn.Module):
+    def __init__(self,in_channels,out_channels, n_time=1280):
+        super().__init__()
+        self.groupnorm_feature = nn.GroupNorm(32, in_channels)
+        self.conv_feature = nn.Conv2d(in_channels, out_channels, kernel_size=3,padding=1)
+        self.linear_time = nn.Linear(n_time, out_channels)
+        
+        self.groupnorm_merged = nn.GroupNorm(32, out_channels)
+        self.conv_merged = nn.Conv2d(out_channels,out_channels, kernel_size= 3, padding=1)
+        
+        if in_channels == out_channels:
+            self.residual_layers = nn.Identity()
+        else:
+            self.residual_layers = nn.Conv2d(in_channels, out_channels, kernel_size= 1, padding=0)
+    def forward(self, feature, time):
+        
+        residue = feature
+        
+        feature = self.groupnorm_feature(feature)
+        
+        feature = F.silu(feature)
+        
+        feature = self.conv_feature(feature)
+        
+        time = F.silu(time)
+        
+        time = self.linear_time(time)
+        
+        merged = feature + time.unsqueeze(-1).unsqueeze(-1)
+        
+        merged = self.groupnorm_feature(merged)
+        
+        merged = F.silu(merged)
+        
+        merged = self.conv_merged(merged)
+        
+        return merged + self.residual_layers(residue)
+        
+        
+        
+        
+        
 class UNET_OutputLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
