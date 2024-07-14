@@ -69,7 +69,7 @@ class CLIP(nn.Module):
         state = self.embedding(tokens)
         
         for layer in self.layers:
-            state = self.layer(state)
+            state = layer(state)
             
         output = self.layernorm(state)
         
