@@ -13,7 +13,7 @@ class CLIPEmbedding(nn.Module):
     def forward(self, tokens):
         
         x = self.token_embedding(tokens)
-        x += self.positition_embedding
+        x += self.position_embedding
         
         return x
         
