@@ -33,7 +33,7 @@ def generate(prompt,
             
 
         generator = torch.Generator(device=device)
-        if seed is none:
+        if seed is None:
             generator.seed()
         else:
             generator.manual_seed(seed)
