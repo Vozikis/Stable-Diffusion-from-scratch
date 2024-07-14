@@ -14,7 +14,7 @@ class DDPMSampler:
         self.num_train_steps = num_training_steps
         self.timesteps = torch.from_numpy(np.arange(0, num_training_steps)[::-1].copy())
         
-    def set_inference_timesteps(self, num_inference_steps =50):
+    def set_inference_timesteps(self, num_inference_steps = 50):
         self.num_inference_steps = num_inference_steps
         step_ratio = self.num_training_steps // self.num_inference_steps
         #we want to go from 1000 to 0 in 50 steps
@@ -26,7 +26,7 @@ class DDPMSampler:
         prev_t = timestep - self.num_train_steps // self.num_inference_steps
         return prev_t 
     
-    def _get_variance(self, timestep: int) -> torch.Tensor:
+    def _get_variance(self, timestep):
         prev_t = self._get_previous_timestep(timestep)
 
         alpha_prod_t = self.alphas_cumprod[timestep]
@@ -35,11 +35,11 @@ class DDPMSampler:
 
         variance = (1 - alpha_prod_t_prev) / (1 - alpha_prod_t) * current_beta_t
 
-        variance = torch.clamp(variance, min=1e-20)
+        variance = torch.clamp(variance, min=1e-20) #make sure we dont reach 0
 
         return variance
     
-    def set_strength(self, strength=1):
+    def set_strength(self, strength =1 ):
         
         start_step = self.num_inference_steps - int(self.num_inference_steps * strength)
         self.timesteps = self.timesteps[start_step:]
@@ -93,4 +93,4 @@ def step(self, timestep, latents, model_output):
         
     pred_prev_sample = pred_prev_sample + variance
     
-    return pred_prev_sample
+    return pred_prev_sample 
