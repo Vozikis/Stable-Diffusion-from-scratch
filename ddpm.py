@@ -7,7 +7,7 @@ class DDPMSampler:
         self.betas = torch.linspace(beta_start**0.5, beta_end**0.5, num_training_steps, dtype=torch.float32)**2
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas,dim=0)
-        self.one = torch.tensor(1,0)
+        self.one = torch.tensor(1.0)
         
         self.generator = generator
         
