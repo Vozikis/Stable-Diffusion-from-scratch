@@ -5,3 +5,4 @@ data/tokenizer_merges.txt
 data/tokenizer_vocab.json
 .DS_Store
 data/v1-5-pruned-emaonly.ckpt
+__pycache__/model_loader.cpython-310.pyc
