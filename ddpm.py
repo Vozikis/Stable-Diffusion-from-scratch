@@ -74,7 +74,7 @@ def step(self, timestep, latents, model_output):
     beta_prod_t = 1 - alpha_prod_t
     beta_prod_t_prev = 1 - alpha_prod_t_prev
     current_alpha_t = alpha_prod_t / alpha_prod_t_prev
-    current_beta_t = 1 - current_alpha_t  current_beta_t = 1 - current_alpha_t
+    current_beta_t = 1 - current_alpha_t
     
     
     pred_original_sample = (latents - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
