@@ -36,7 +36,7 @@ class SelfAttention(nn.Module):
         output = output.transpose(1,2)
         output = output.reshape(input_shape)
         output = self.out_proj(output)
-        return outpout
+        return output
 
 
 class CrossAttention(nn.Module):
