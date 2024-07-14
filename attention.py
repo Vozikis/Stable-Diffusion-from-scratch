@@ -35,7 +35,7 @@ class SelfAttention(nn.Module):
         output = weight @ v
         output = output.transpose(1,2)
         output = output.reshape(input_shape)
-        outpout = self.out_proj(output)
+        output = self.out_proj(output)
         return outpout
 
 
