@@ -13,7 +13,7 @@ class TimeEmbedding(nn.Module):
     def forward(self, x):
         x = self.linear_1(x)
         x = F.silu(x)
-        x= self.linear_2(x)
+        x = self.linear_2(x)
         return x
 
 class SwitchSequential(nn.Sequential):
@@ -51,9 +51,10 @@ class UNET_ResidualBlock(nn.Module):
         self.conv_merged = nn.Conv2d(out_channels,out_channels, kernel_size= 3, padding=1)
         
         if in_channels == out_channels:
-            self.residual_layers = nn.Identity() #we connect directly 
-        else: #else we have to convert into the shape of interest
-            self.residual_layers = nn.Conv2d(in_channels, out_channels, kernel_size= 1, padding=0)
+            self.residual_layer = nn.Identity()
+        else:
+            self.residual_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0)
+
             
     def forward(self, feature, time):
         
@@ -71,7 +72,7 @@ class UNET_ResidualBlock(nn.Module):
         
         merged = feature + time.unsqueeze(-1).unsqueeze(-1) #add the batch and the channel dimension
         
-        merged = self.groupnorm_feature(merged)
+        merged = self.groupnorm_merged(merged)
         
         merged = F.silu(merged)
         

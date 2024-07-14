@@ -11,7 +11,14 @@ class VAE_AttentionBlock(nn.Module):
     
     def forward(self,x):
         residue = x
+        
+        x = self.groupnorm(x)
+        
         n, c, h, w = x.shape
+        
+        x = x.view((n, c, h * w))
+        
+        
         x = x.transpose(-1,-2)
         x = self.attention(x)
         x = x.transpose(-1,-2)
@@ -27,7 +34,7 @@ class VAE_ResidualBlock(nn.Module):
         self.conv_1 = nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
         
         self.groupnorm_2 = nn.GroupNorm(32,out_channels)
-        self.conv_2 = nn.Conv2d(in_channels,out_channels, kernel_size=3, padding=1)
+        self.conv_2 = nn.Conv2d(out_channels,out_channels, kernel_size=3, padding=1)
 
         if in_channels == out_channels:
             self.residual_layer = nn.Identity()
