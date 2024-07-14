@@ -55,7 +55,7 @@ class CLIPLayer(nn.Module):
         
         return x
 
-class Clip(nn.Module):
+class CLIP(nn.Module):
     def __init__(self):
         self.embedding = CLIPEmbedding(49408, 768, 77)
         self.layers = nn.ModuleList([
